@@ -110,6 +110,7 @@ class MenuController extends Controller
             return response()->json([
                 'message' => 'Update Menu Success',
                 'data' => new MenuResource($menu),
+                'request' => $request->all()
             ]);
         } catch (\Throwable $th) {
             DB::rollBack();

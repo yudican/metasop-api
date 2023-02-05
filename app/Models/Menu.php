@@ -8,7 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class Menu extends Model
 {
     use HasFactory;
-    protected $guarded = [];
+    protected $fillable = [
+        'menu_label',
+        'menu_icon',
+        'menu_route',
+        'menu_order',
+        'show_menu',
+        'parent_id',
+    ];
 
     // hidden fields
     protected $hidden = ['created_at', 'updated_at'];
