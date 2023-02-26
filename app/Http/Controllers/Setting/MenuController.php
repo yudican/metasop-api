@@ -37,11 +37,12 @@ class MenuController extends Controller
         try {
             DB::beginTransaction();
 
+            $lastMenu = Menu::orderBy('menu_order', 'desc')->first();
             $menu = Menu::create([
                 'menu_label' => $request->menu_label,
                 'menu_icon' => $request->menu_icon,
                 'menu_route' => $request->menu_route,
-                'menu_order' => $request->menu_order,
+                'menu_order' => $lastMenu ? $lastMenu->menu_order + 0 : 1,
                 'show_menu' => $request->show_menu,
                 'parent_id' => $request->parent_id,
             ]);
@@ -147,6 +148,41 @@ class MenuController extends Controller
             DB::rollBack();
             return response()->json([
                 'message' => 'Delete Menu Failed',
+                'data' => $th->getMessage(),
+            ], 400);
+        }
+    }
+
+    // updateMenuRole
+    public function updateMenuRole(Request $request, $menu_id)
+    {
+        // update menu role
+        try {
+            DB::beginTransaction();
+
+            $menu = Menu::find($menu_id);
+            // check if role already attached
+            $role = $menu->roles()->where('role_id', $request->id)->first();
+
+            if ($role) {
+                $menu->roles()->detach($request->id);
+                DB::commit();
+                return response()->json([
+                    'message' => 'Update Menu Role Success',
+                    'data' => new MenuResource($menu),
+                ]);
+            }
+
+            $menu->roles()->attach($request->id);
+            DB::commit();
+            return response()->json([
+                'message' => 'Update Menu Role Success',
+                'data' => new MenuResource($menu),
+            ]);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Update Menu Role Failed',
                 'data' => $th->getMessage(),
             ], 400);
         }
