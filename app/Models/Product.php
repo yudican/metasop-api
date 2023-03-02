@@ -30,6 +30,19 @@ class Product extends Model
 
     protected $appends = ['member_price', 'commission_fee'];
 
+    protected $hidden = ['created_at', 'updated_at'];
+    protected $with = ['levelPrices'];
+
+    /**
+     * Get all of the levelPrices for the Product
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function levelPrices()
+    {
+        return $this->hasMany(ProductLevelPrice::class);
+    }
+
     // get member price
     public function getMemberPriceAttribute()
     {

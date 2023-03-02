@@ -15,8 +15,4 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function () {
     // profile
-    Route::prefix('user')->group(function () {
-        Route::get('profile', [ProfileController::class, 'getProfile']);
-        Route::get('menu', [ProfileController::class, 'getMenuList']);
-    });
 });

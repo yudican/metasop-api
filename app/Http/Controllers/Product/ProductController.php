@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Product;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\ProductLevelPrice;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -130,19 +132,43 @@ class ProductController extends Controller
     // update product
     public function updateProduct(Request $request, $product_id)
     {
-        $product = Product::find($product_id);
+        try {
+            DB::beginTransaction();
+            $product = Product::find($product_id);
 
-        $product->update([
-            'product_name' => $request->product_name,
-            'product_price' => $request->product_price,
-            'admin_fee' => $request->admin_fee,
-        ]);
+            $product->update([
+                'product_name' => $request->product_name,
+                'product_price' => $request->product_price,
+                'admin_fee' => $request->admin_fee,
+            ]);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $product,
-            'message' => 'Success Update Product'
-        ]);
+            if ($request->type == 'prepaid') {
+                foreach ($request->level_ids as $key => $value) {
+                    $price = "level_price_" . $value;
+                    ProductLevelPrice::updateOrCreate([
+                        'product_id' => $product_id,
+                        'level_price_id' => $value
+                    ], [
+                        'product_id' => $product_id,
+                        'level_price_id' => $value,
+                        'price' => $request->$price,
+                    ]);
+                }
+            }
+            DB::commit();
+            return response()->json([
+                'status' => 'success',
+                'data' => $product,
+                'message' => 'Success Update Product'
+            ]);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'data' => $th->getMessage(),
+                'message' => 'Error Update Product'
+            ], 400);
+        }
     }
 
     // update product
