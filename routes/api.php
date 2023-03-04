@@ -4,10 +4,12 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Master\BannerController;
 use App\Http\Controllers\Master\LevelPriceController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Product\ProductController;
 use App\Http\Controllers\Profile\ProfileController;
 use App\Http\Controllers\Setting\MenuController;
 use App\Http\Controllers\Setting\RoleController;
+use App\Http\Controllers\User\DepositeController;
 use App\Models\Banner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -25,11 +27,14 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('auth/login', [LoginController::class, 'login']);
 Route::post('auth/register', [RegisterController::class, 'register']);
+Route::post('callback', [PaymentController::class, 'duitkuCallback'])->name('payment.callback');
 Route::middleware('auth:sanctum')->group(function () {
     // profile
     Route::prefix('user')->group(function () {
         Route::get('profile', [ProfileController::class, 'getProfile']);
         Route::get('menu', [ProfileController::class, 'getMenuList']);
+        Route::post('deposit/payment-list', [DepositeController::class, 'getPaymentMethod']);
+        Route::post('deposit/create', [DepositeController::class, 'createDeposite']);
     });
 
     // setting

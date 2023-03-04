@@ -61,4 +61,24 @@ class User extends Authenticatable
     {
         return $this->roles()->first();
     }
+
+    /**
+     * Get all of the deposits for the User
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function deposits()
+    {
+        return $this->hasMany(UserDeposite::class, 'user_id');
+    }
+
+    /**
+     * Get all of the balances for the User
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function balances()
+    {
+        return $this->hasMany(UserBalance::class, 'user_id');
+    }
 }
