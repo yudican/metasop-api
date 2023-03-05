@@ -142,19 +142,18 @@ class ProductController extends Controller
                 'admin_fee' => $request->admin_fee,
             ]);
 
-            if ($request->type == 'prepaid') {
-                foreach ($request->level_ids as $key => $value) {
-                    $price = "level_price_" . $value;
-                    ProductLevelPrice::updateOrCreate([
-                        'product_id' => $product_id,
-                        'level_price_id' => $value
-                    ], [
-                        'product_id' => $product_id,
-                        'level_price_id' => $value,
-                        'price' => $request->$price,
-                    ]);
-                }
+            foreach ($request->level_ids as $key => $value) {
+                $price = "level_price_" . $value;
+                ProductLevelPrice::updateOrCreate([
+                    'product_id' => $product_id,
+                    'level_price_id' => $value
+                ], [
+                    'product_id' => $product_id,
+                    'level_price_id' => $value,
+                    'price' => $request->$price,
+                ]);
             }
+
             DB::commit();
             return response()->json([
                 'status' => 'success',

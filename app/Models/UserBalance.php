@@ -12,7 +12,8 @@ class UserBalance extends Model
     protected $fillable = [
         'user_id',
         'balance',
-        'status',
+        'type',
+        'description',
     ];
 
     public function users()

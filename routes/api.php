@@ -69,4 +69,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('level-price/list', [LevelPriceController::class, 'list']);
         Route::apiResource('level-price', LevelPriceController::class);
     });
+
+    // transaction
+    Route::prefix('transaction')->group(function () {
+        // transaction
+        #deposit
+        Route::post('deposit', [DepositeController::class, 'getListDeposit']);
+        Route::get('deposit/detail/{ref}', [DepositeController::class, 'detailTransaction']);
+        Route::get('deposit/status/{ref}', [DepositeController::class, 'updateTransactionStatus']);
+    });
 });

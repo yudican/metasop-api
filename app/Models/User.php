@@ -45,7 +45,7 @@ class User extends Authenticatable
         'phone_verified_at' => 'datetime',
     ];
 
-    protected $appends = ['role'];
+    protected $appends = ['role', 'balance'];
 
     /**
      * The roles that belong to the User
@@ -80,5 +80,10 @@ class User extends Authenticatable
     public function balances()
     {
         return $this->hasMany(UserBalance::class, 'user_id');
+    }
+
+    public function getBalanceAttribute()
+    {
+        return $this->balances()->where('type', 'CR')->sum('balance');
     }
 }

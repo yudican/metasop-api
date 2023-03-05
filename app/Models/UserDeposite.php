@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use DateTime;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -24,7 +25,9 @@ class UserDeposite extends Model
     protected $appends = [
         'user_name',
         'status_name',
-        'status_color'
+        'status_color',
+        'expired_payment',
+        'created_payment',
     ];
 
     public function users()
@@ -54,13 +57,36 @@ class UserDeposite extends Model
     public function getStatusColorAttribute()
     {
         $status = [
-            0 => 'yellow',
-            1 => 'green',
-            2 => 'red',
-            3 => 'red',
-            4 => 'red',
+            0 => '#f1c40f',
+            1 => '#2ecc71',
+            2 => '#e74c3c',
+            3 => '#e74c3c',
+            4 => '#e74c3c',
         ];
 
         return $status[$this->status];
+    }
+
+    public function getExpiredPaymentAttribute()
+    {
+        $start_date = date('Y-m-d H:i:s');
+        $end_date = $this->created_at->addDays(1);
+
+        $start = new DateTime($start_date);
+        $end = new DateTime($end_date);
+        $diff = $start->diff($end);
+
+        $daysInSecs = $diff->format('%r%a') * 24 * 60 * 60;
+        $hoursInSecs = $diff->h * 60 * 60;
+        $minsInSecs = $diff->i * 60;
+
+        $seconds = $daysInSecs + $hoursInSecs + $minsInSecs + $diff->s;
+
+        return $seconds * 1000;
+    }
+
+    public function getCreatedPaymentAttribute()
+    {
+        return date('d M Y H:i', strtotime($this->created_at)) . ' WIB';
     }
 }

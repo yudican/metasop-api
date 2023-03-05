@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\UserBalance;
 use App\Models\UserDeposite;
 use Duitku\Config;
 use Illuminate\Http\Request;
@@ -42,6 +43,13 @@ class PaymentController extends Controller
             if ($resultCode == '00') {
                 UserDeposite::where('trx_id', $merchantOrderId)->update([
                     'status' => 1,
+                ]);
+
+                $user_id = UserDeposite::where('trx_id', $merchantOrderId)->first()->user_id;
+                UserBalance::create([
+                    'user_id' => $user_id,
+                    'balance' =>  $duitku_amount,
+                    'type' => 'CR',
                 ]);
             }
 

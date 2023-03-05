@@ -3,25 +3,22 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\PaymentController;
-use App\Models\PaymentMethod;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use App\Models\UserDeposite;
+use Illuminate\Http\Request;
+use GuzzleHttp\Client;
 use Duitku\Pop;
 use Exception;
-use GuzzleHttp\Client;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
 
 class DepositeController extends PaymentController
 {
     // get payment method 
     public function getPaymentMethod(Request $request)
-
     {
         // guzzle http client post request
         $client = new Client();
-        $orderId = 'INV-DEP-' . time();
+        $orderId = date('Y-m-d H:i:s');
         $signature = hash('sha256', env('DUITKU_MERCHANT_CODE') . $request->deposit_amount . $orderId . env('DUITKU_API_KEY'));
         try {
             $response = $client->request('POST', env('DUITKU_URL') . '/merchant/paymentmethod/getpaymentmethod', [
@@ -49,9 +46,10 @@ class DepositeController extends PaymentController
             ], 200);
         } catch (\Throwable $th) {
             return response()->json([
-                'message' => 'Error',
-                'data' => 'Metode Pembayaran Tidak Tersedia',
+                'status' => 'Error',
+                'message' => 'Metode Pembayaran Tidak Tersedia',
                 'error' => $th->getMessage(),
+                "signature" => env('DUITKU_MERCHANT_CODE') . $request->deposit_amount . $orderId . env('DUITKU_API_KEY')
             ], 400);
         }
     }
@@ -63,7 +61,6 @@ class DepositeController extends PaymentController
         $validator = Validator::make($request->all(), [
             'payment' => 'required',
             'deposit_amount' => 'required|integer',
-            'order_id' => 'required',
         ]);
 
         // validate failed
@@ -89,10 +86,10 @@ class DepositeController extends PaymentController
         $user = auth()->user();
 
         $paymentMethod      = $request->payment['paymentMethod'];
-        $paymentAmount      = $request->deposit_amount; // Amount
+        $paymentAmount      = intval($request->deposit_amount); // Amount
         $email              = $user->email; // your customer email
         $productDetails     = "Deposit";
-        $merchantOrderId    = $request->order_id; // from merchant, unique   
+        $merchantOrderId    = '#' . time(); // from merchant, unique   
         $additionalParam    = ''; // optional
         $merchantUserInfo   = ''; // optional
         $customerVaName     = $user->name; // display name on bank confirmation display
@@ -153,8 +150,80 @@ class DepositeController extends PaymentController
             DB::rollBack();
             return response()->json([
                 'status' => 'error',
-                'message' => $e->getMessage()
-            ]);
+                'message' => 'Deposit gagal',
+                'message-dev' => $e->getMessage(),
+                'data' => $params
+            ], 400);
         }
+    }
+
+    // list deposite
+    public function getListDeposit(Request $request)
+    {
+        $search = $request->search;
+        $status = $request->status;
+        $role = auth()->user()->role;
+
+        $deposit =  UserDeposite::query();
+        if ($search) {
+            $deposit->where(function ($query) use ($search) {
+                $query->where('payment_code', 'like', "%$search%");
+                $query->orWhere('deposit_amount', 'like', "%$search%");
+                $query->orWhere('payment_name', 'like', "%$search%");
+                $query->orWhere('trx_id', 'like', "%$search%");
+                $query->orWhere('ref', 'like', "%$search%");
+            });
+        }
+
+        if ($status) {
+            $deposit->where('status', $status);
+        }
+
+
+        if (in_array($role->role_type, ['member', 'reseller'])) {
+            $deposit->where('user_id', auth()->user()->id);
+        }
+
+
+        $deposits = $deposit->orderBy('created_at', 'desc')->paginate($request->perpage);
+        return response()->json([
+            'status' => 'success',
+            'data' => $deposits,
+            'message' => 'List deposit'
+        ]);
+    }
+
+    public function detailTransaction($ref)
+    {
+        $user = UserDeposite::where('ref', $ref)->first();
+
+        return response()->json([
+            'data' => $user,
+        ]);
+    }
+
+    public function updateTransactionStatus(Request $request, $ref)
+    {
+        $transaction = UserDeposite::where('ref', $ref)->first();
+
+        if (!$transaction) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Transaction not found',
+                'data' => null,
+            ], 404);
+        }
+
+        $data =  [
+            'status' => $request->status
+        ];
+
+        if ($transaction->status == 0) {
+            $transaction->update($data);
+        }
+
+        return response()->json([
+            'data' => $transaction,
+        ]);
     }
 }

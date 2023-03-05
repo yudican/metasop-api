@@ -47,7 +47,12 @@ class ProductLevelPrice extends Model
     {
         $product = Product::find($this->product_id);
         if ($product) {
-            $commission = $this->price - $product->product_price;
+            if ($product->type == 'prepaid') {
+                $commission = $this->price - $product->product_price;
+                return $commission > 0 ? $commission : 0;
+            }
+
+            $commission = $this->price - $product->admin_fee;
             return $commission > 0 ? $commission : 0;
         }
 
